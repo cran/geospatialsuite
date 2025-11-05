@@ -23,6 +23,31 @@ knitr::opts_chunk$set(
 # basic_indices <- list_vegetation_indices(category = "basic")
 # stress_indices <- list_vegetation_indices(category = "stress")
 
+## ----complete-index-table, echo=FALSE, message=FALSE--------------------------
+library(geospatialsuite)
+detailed <- list_vegetation_indices(detailed = TRUE)
+
+knitr::kable(
+  detailed[, c("Index", "Category", "Formula", "Range", "Reference")],
+  caption = "Complete Vegetation Indices Reference - All 62 Indices",
+  format = "html"
+)
+
+## ----index-info-example, eval=FALSE-------------------------------------------
+# # Get all indices with formulas
+# all_indices <- list_vegetation_indices(detailed = TRUE)
+# View(all_indices)
+# 
+# # Filter by category
+# stress <- list_vegetation_indices(category = "stress", detailed = TRUE)
+# water <- list_vegetation_indices(application = "water", detailed = TRUE)
+# 
+# # Get specific index information
+# ndvi_info <- all_indices[all_indices$Index == "NDVI", ]
+# cat(sprintf("NDVI Formula: %s\n", ndvi_info$Formula))
+# cat(sprintf("NDVI Range: %s\n", ndvi_info$Range))
+# cat(sprintf("Reference: %s\n", ndvi_info$Reference))
+
 ## ----eval=FALSE---------------------------------------------------------------
 # # Simple NDVI from individual bands
 # ndvi <- calculate_vegetation_index(
@@ -709,4 +734,157 @@ knitr::opts_chunk$set(
 # 
 # # Test your installation
 # test_geospatialsuite_package_simple(verbose = TRUE)
+
+## ----eval=FALSE---------------------------------------------------------------
+# # All of these will be recognized as the red band
+# calculate_vegetation_index(red = red_band, nir = nir_band, index_type = "NDVI")
+# calculate_vegetation_index(spectral_data = raster_with_band_named_"B4", auto_detect_bands = TRUE)
+# calculate_vegetation_index(spectral_data = raster_with_band_named_"RED", auto_detect_bands = TRUE)
+
+## ----eval=FALSE---------------------------------------------------------------
+# library(geospatialsuite)
+# library(terra)
+# 
+# # If your Landsat file has band names: B1, B2, B3, B4, B5, B6, B7
+# landsat <- rast("LC08_L2SP_029030_20230615_B1-7.tif")
+# 
+# # Auto-detection will work automatically
+# ndvi <- calculate_vegetation_index(
+#   spectral_data = landsat,
+#   index_type = "NDVI",
+#   auto_detect_bands = TRUE
+# )
+# 
+# # Or specify bands explicitly
+# ndvi <- calculate_vegetation_index(
+#   red = landsat[["B4"]],
+#   nir = landsat[["B5"]],
+#   index_type = "NDVI"
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# # If your Sentinel-2 file has standard band names
+# sentinel <- rast("S2A_MSIL2A_20230615_B02-B12.tif")
+# 
+# # Auto-detection works
+# ndvi <- calculate_vegetation_index(
+#   spectral_data = sentinel,
+#   index_type = "NDVI",
+#   auto_detect_bands = TRUE
+# )
+# 
+# # Calculate red edge index (requires Sentinel-2)
+# ndre <- calculate_vegetation_index(
+#   spectral_data = sentinel,
+#   index_type = "NDRE",
+#   auto_detect_bands = TRUE
+# )
+# 
+# # Or use specific band names
+# evi <- calculate_vegetation_index(
+#   red = sentinel[["B04"]],
+#   nir = sentinel[["B08"]],
+#   blue = sentinel[["B02"]],
+#   index_type = "EVI"
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# modis <- rast("MOD13Q1_NDVI_2023165.tif")
+# 
+# # If bands are named generically
+# ndvi <- calculate_vegetation_index(
+#   spectral_data = modis,
+#   index_type = "NDVI",
+#   auto_detect_bands = TRUE
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Your raster has bands: "band_A", "band_B", "band_C", "band_D"
+# my_raster <- rast("custom_satellite.tif")
+# 
+# # Rename to standard names
+# names(my_raster) <- c("red", "green", "blue", "nir")
+# 
+# # Now auto-detection works
+# ndvi <- calculate_vegetation_index(
+#   spectral_data = my_raster,
+#   index_type = "NDVI",
+#   auto_detect_bands = TRUE
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Tell the function which bands are which
+# ndvi <- calculate_vegetation_index(
+#   spectral_data = my_raster,
+#   band_names = c("band_A", "band_B", "band_C", "band_D"),  # Order: Red, Green, Blue, NIR
+#   index_type = "NDVI",
+#   auto_detect_bands = FALSE
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Extract specific layers
+# red_band <- my_raster[[1]]   # Assuming layer 1 is red
+# nir_band <- my_raster[[4]]   # Assuming layer 4 is NIR
+# 
+# # Pass explicitly
+# ndvi <- calculate_vegetation_index(
+#   red = red_band,
+#   nir = nir_band,
+#   index_type = "NDVI"
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Check your band names
+# names(my_raster)
+# # [1] "sr_band_4" "sr_band_5" "sr_band_3" "sr_band_2"
+# 
+# # Rename them
+# names(my_raster) <- c("red", "nir", "green", "blue")
+# 
+# # Or extract and pass explicitly
+# calculate_vegetation_index(
+#   red = my_raster[[1]],
+#   nir = my_raster[[2]],
+#   index_type = "NDVI"
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Don't use auto-detection, be explicit
+# calculate_vegetation_index(
+#   red = my_raster[["B04"]],
+#   nir = my_raster[["B08"]],
+#   red_edge = my_raster[["B05"]],
+#   index_type = "NDRE"
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Create file list
+# band_files <- c(
+#   red = "LC08_B4.tif",
+#   nir = "LC08_B5.tif",
+#   blue = "LC08_B2.tif"
+# )
+# 
+# # Let the function load them
+# evi <- calculate_vegetation_index(
+#   spectral_data = band_files,
+#   index_type = "EVI"
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# # If all bands are in one directory with recognizable names
+# ndvi <- calculate_vegetation_index(
+#   spectral_data = "/path/to/landsat/bands/",
+#   index_type = "NDVI",
+#   auto_detect_bands = TRUE
+# )
+
+## ----eval=FALSE---------------------------------------------------------------
+# # Turn on verbose mode
+# result <- calculate_vegetation_index(
+#   spectral_data = my_raster,
+#   index_type = "NDVI",
+#   auto_detect_bands = TRUE,
+#   verbose = TRUE  # This will print which bands were detected
+# )
 

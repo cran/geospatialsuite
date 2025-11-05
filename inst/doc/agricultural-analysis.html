@@ -1148,6 +1148,124 @@ trend analysis</li>
 <span id="cb20-12"><a href="#cb20-12" tabindex="-1"></a>}</span></code></pre></div>
 </div>
 </div>
+<div id="understanding-analyze_crop_vegetation-outputs" class="section level2">
+<h2>Understanding analyze_crop_vegetation() Outputs</h2>
+<div id="output-structure-overview" class="section level3">
+<h3>Output Structure Overview</h3>
+<p>The function returns three main components:</p>
+<ol style="list-style-type: decimal">
+<li><strong>vegetation_indices</strong>: Raster layers with calculated
+indices</li>
+<li><strong>analysis_results</strong>: Detailed analysis (stress,
+growth, yield)</li>
+<li><strong>metadata</strong>: Processing information</li>
+</ol>
+</div>
+<div id="interpreting-stress-analysis" class="section level3">
+<h3>Interpreting Stress Analysis</h3>
+<p>Stress detection classifies pixels into three categories:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Stress Level</th>
+<th>NDVI Range</th>
+<th>Interpretation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Healthy</td>
+<td>0.6 - 1.0</td>
+<td>Normal vegetation growth</td>
+</tr>
+<tr class="even">
+<td>Moderate Stress</td>
+<td>0.4 - 0.6</td>
+<td>Some stress present</td>
+</tr>
+<tr class="odd">
+<td>Severe Stress</td>
+<td>0.0 - 0.4</td>
+<td>Significant stress</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">analyze_crop_vegetation</span>(data, <span class="at">analysis_type =</span> <span class="st">&quot;stress&quot;</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>stress <span class="ot">&lt;-</span> result<span class="sc">$</span>analysis_results<span class="sc">$</span>stress_analysis<span class="sc">$</span>NDVI</span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a></span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a><span class="co"># What percentage of my field needs attention?</span></span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;%.1f%% of field shows stress</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a>            stress<span class="sc">$</span>moderate_stress_percentage <span class="sc">+</span> stress<span class="sc">$</span>severe_stress_percentage))</span></code></pre></div>
+</div>
+<div id="understanding-composite-yield-index" class="section level3">
+<h3>Understanding Composite Yield Index</h3>
+<p>The <strong>composite yield index</strong> is a 0-1 normalized score
+that combines multiple vegetation indices:</p>
+<p><strong>How it’s calculated:</strong> 1. Multiple indices (NDVI, EVI,
+GNDVI, DVI, RVI) are normalized to 0-1 2. Normalized values are averaged
+3. Result indicates relative yield potential</p>
+<p><strong>Interpretation:</strong> - <strong>0.0-0.3</strong>: Low
+yield potential - <strong>0.3-0.6</strong>: Medium yield potential -
+<strong>0.6-0.8</strong>: High yield potential -
+<strong>0.8-1.0</strong>: Very high yield potential</p>
+<p><strong>Important caveats:</strong> - This is a
+<strong>relative</strong> measure, not absolute yield - Should be
+calibrated with actual yield data - Works best for within-field
+comparisons - Correlation with actual yield varies by crop and
+region</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">analyze_crop_vegetation</span>(data, <span class="at">crop_type =</span> <span class="st">&quot;corn&quot;</span>, <span class="at">analysis_type =</span> <span class="st">&quot;yield&quot;</span>)</span>
+<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a>yield <span class="ot">&lt;-</span> result<span class="sc">$</span>analysis_results<span class="sc">$</span>yield_analysis</span>
+<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a></span>
+<span id="cb22-4"><a href="#cb22-4" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Yield Potential: %s</span><span class="sc">\n</span><span class="st">&quot;</span>, yield<span class="sc">$</span>yield_potential_class))</span>
+<span id="cb22-5"><a href="#cb22-5" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Composite Score: %.2f</span><span class="sc">\n</span><span class="st">&quot;</span>, yield<span class="sc">$</span>composite_yield_index))</span>
+<span id="cb22-6"><a href="#cb22-6" tabindex="-1"></a></span>
+<span id="cb22-7"><a href="#cb22-7" tabindex="-1"></a><span class="co"># See which indices contributed</span></span>
+<span id="cb22-8"><a href="#cb22-8" tabindex="-1"></a><span class="cf">for</span> (idx <span class="cf">in</span> <span class="fu">names</span>(yield<span class="sc">$</span>index_contributions)) {</span>
+<span id="cb22-9"><a href="#cb22-9" tabindex="-1"></a>  contrib <span class="ot">&lt;-</span> yield<span class="sc">$</span>index_contributions[[idx]]</span>
+<span id="cb22-10"><a href="#cb22-10" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;  %s: %.3f</span><span class="sc">\n</span><span class="st">&quot;</span>, idx, contrib<span class="sc">$</span>mean_normalized))</span>
+<span id="cb22-11"><a href="#cb22-11" tabindex="-1"></a>}</span></code></pre></div>
+</div>
+<div id="growth-stage-predictions" class="section level3">
+<h3>Growth Stage Predictions</h3>
+<p>Growth stage is predicted from NDVI patterns:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Crop</th>
+<th>Stage</th>
+<th>NDVI Range</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Corn</td>
+<td>Emergence</td>
+<td>&lt; 0.3</td>
+</tr>
+<tr class="even">
+<td>Corn</td>
+<td>Vegetative</td>
+<td>0.3 - 0.6</td>
+</tr>
+<tr class="odd">
+<td>Corn</td>
+<td>Reproductive</td>
+<td>0.6 - 0.8</td>
+</tr>
+<tr class="even">
+<td>Corn</td>
+<td>Maturity</td>
+<td>&gt; 0.8</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">analyze_crop_vegetation</span>(data, <span class="at">crop_type =</span> <span class="st">&quot;soybeans&quot;</span>, <span class="at">analysis_type =</span> <span class="st">&quot;growth&quot;</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a>growth <span class="ot">&lt;-</span> result<span class="sc">$</span>analysis_results<span class="sc">$</span>growth_analysis</span>
+<span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a></span>
+<span id="cb23-4"><a href="#cb23-4" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Predicted stage: %s</span><span class="sc">\n</span><span class="st">&quot;</span>, growth<span class="sc">$</span>predicted_growth_stage))</span>
+<span id="cb23-5"><a href="#cb23-5" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Confidence: %.0f%%</span><span class="sc">\n</span><span class="st">&quot;</span>, growth<span class="sc">$</span>stage_confidence <span class="sc">*</span> <span class="dv">100</span>))</span></code></pre></div>
+</div>
+</div>
 <div id="summary" class="section level2">
 <h2>Summary</h2>
 <p>GeoSpatialSuite’s agricultural applications provide:</p>

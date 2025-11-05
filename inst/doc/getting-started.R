@@ -59,6 +59,38 @@ library(dplyr)
 # # State and county
 # franklin_county <- get_region_boundary("Ohio:Franklin")
 
+## ----band-naming-example, eval=FALSE------------------------------------------
+# # These are all equivalent
+# ndvi1 <- calculate_vegetation_index(red = red_band, nir = nir_band, index_type = "NDVI")
+# ndvi2 <- calculate_vegetation_index(Red = red_band, NIR = nir_band, index_type = "NDVI")
+# ndvi3 <- calculate_vegetation_index(RED = red_band, nir = nir_band, index_type = "NDVI")
+
+## ----satellite-examples, eval=FALSE-------------------------------------------
+# # Landsat 8/9 (auto-detected)
+# landsat <- rast("LC08_stack.tif")  # Has B1-B7
+# ndvi <- calculate_vegetation_index(
+#   spectral_data = landsat,
+#   index_type = "NDVI",
+#   auto_detect_bands = TRUE
+# )
+# 
+# # Sentinel-2 (auto-detected, includes red edge)
+# sentinel <- rast("S2_stack.tif")  # Has B01-B12
+# ndre <- calculate_vegetation_index(
+#   spectral_data = sentinel,
+#   index_type = "NDRE",  # Red edge index
+#   auto_detect_bands = TRUE
+# )
+# 
+# # Custom names (rename first)
+# custom <- rast("custom_satellite.tif")
+# names(custom) <- c("red", "nir", "blue", "green")
+# evi <- calculate_vegetation_index(
+#   spectral_data = custom,
+#   index_type = "EVI",
+#   auto_detect_bands = TRUE
+# )
+
 ## ----eval=FALSE---------------------------------------------------------------
 # # Basic NDVI calculation
 # ndvi <- calculate_vegetation_index(

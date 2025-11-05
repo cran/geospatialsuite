@@ -715,3 +715,31 @@ knitr::opts_chunk$set(
 #   print(paste(component, ":", paste(precision_ag_components[[component]], collapse = ", ")))
 # }
 
+## ----stress-example, eval=FALSE-----------------------------------------------
+# result <- analyze_crop_vegetation(data, analysis_type = "stress")
+# stress <- result$analysis_results$stress_analysis$NDVI
+# 
+# # What percentage of my field needs attention?
+# cat(sprintf("%.1f%% of field shows stress\n",
+#             stress$moderate_stress_percentage + stress$severe_stress_percentage))
+
+## ----yield-example, eval=FALSE------------------------------------------------
+# result <- analyze_crop_vegetation(data, crop_type = "corn", analysis_type = "yield")
+# yield <- result$analysis_results$yield_analysis
+# 
+# cat(sprintf("Yield Potential: %s\n", yield$yield_potential_class))
+# cat(sprintf("Composite Score: %.2f\n", yield$composite_yield_index))
+# 
+# # See which indices contributed
+# for (idx in names(yield$index_contributions)) {
+#   contrib <- yield$index_contributions[[idx]]
+#   cat(sprintf("  %s: %.3f\n", idx, contrib$mean_normalized))
+# }
+
+## ----growth-example, eval=FALSE-----------------------------------------------
+# result <- analyze_crop_vegetation(data, crop_type = "soybeans", analysis_type = "growth")
+# growth <- result$analysis_results$growth_analysis
+# 
+# cat(sprintf("Predicted stage: %s\n", growth$predicted_growth_stage))
+# cat(sprintf("Confidence: %.0f%%\n", growth$stage_confidence * 100))
+
