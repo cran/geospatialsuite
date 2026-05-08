@@ -1,3 +1,83 @@
+#' Get required bands for each vegetation index
+#' @keywords internal
+get_index_required_bands <- function(index_type) {
+
+  requirements <- list(
+    # Indices that DON'T need red
+    "GNDVI" = c("green", "nir"),
+    "NDRE" = c("nir", "red_edge"),
+    # PRI requires 531 nm & 570 nm (hyperspectral narrowband)- no broadband proxy
+    "NDWI" = c("green", "nir"),
+    "MNDWI" = c("green", "swir1"),
+    "CRI2" = c("green", "red_edge"),
+    "ARI1" = c("green", "red_edge"),
+    "ARI2" = c("green", "nir", "red_edge"),
+    "NDNI" = c("nir", "swir1"),
+    "NDII" = c("nir", "swir1"),
+    "NDMI" = c("nir", "swir1"),
+    "MSI" = c("nir", "swir1"),
+    "NBR" = c("nir", "swir2"),
+    "WI" = c("nir", "swir1"),
+    "SRWI" = c("nir", "swir1"),
+    "LSWI" = c("nir", "swir1"),
+    "NDSI" = c("green", "swir1"),
+    "GBNDVI" = c("green", "blue", "nir"),
+    "NDLI" = c("nir", "swir1"),
+
+    # Indices that DON'T need NIR
+    "VARI" = c("red", "green", "blue"),
+    "S2REP" = c("red", "red_edge", "red_edge2"),  # Needs TWO red-edge bands (B5 + B6)
+    "PSRI" = c("red", "green", "red_edge"),
+    "CRI1" = c("red", "green"),
+    "CARI"  = c("red", "green", "red_edge"),       #
+    "TCARI" = c("red", "green", "red_edge"),       #
+    "MCARI" = c("red", "green", "red_edge"),
+    "CI" = c("red", "green"),
+    "NPCI" = c("red", "blue"),
+    # NPQI requires 415 nm & 435 nm (hyperspectral) - no broadband proxy
+    "CCI" = c("red", "red_edge"),
+
+    # Standard red + nir indices
+    "NDVI" = c("red", "nir"),
+    "SAVI" = c("red", "nir"),
+    "MSAVI" = c("red", "nir"),
+    "OSAVI" = c("red", "nir"),
+    "EVI" = c("red", "nir", "blue"),
+    "EVI2" = c("red", "nir"),
+    "DVI" = c("red", "nir"),
+    "RVI" = c("red", "nir"),
+    "WDVI" = c("red", "nir"),
+    "ARVI" = c("red", "nir", "blue"),
+    "RDVI" = c("red", "nir"),
+    "PVI" = c("red", "nir"),
+    "IPVI" = c("red", "nir"),
+    "TNDVI" = c("red", "nir"),
+    "GEMI" = c("red", "nir"),
+    "TSAVI" = c("red", "nir"),
+    "ATSAVI" = c("red", "nir"),
+    "GESAVI" = c("red", "nir"),
+    "MTVI" = c("red", "green", "nir"),
+    "MTVI1" = c("red", "green", "nir"),
+    "MTVI2" = c("red", "green", "nir"),
+    "CTVI" = c("red", "nir"),
+    "MTCI" = c("red", "red_edge", "nir"),
+    "IRECI" = c("red", "red_edge", "nir"),
+    "SIPI" = c("red", "green", "nir"),
+    "BAI" = c("red", "nir", "swir1"),
+    "LAI" = c("red", "nir", "blue"),
+    "FAPAR" = c("red", "nir"),
+    "TVI" = c("red", "green", "nir")
+  )
+
+  # Return required bands, default to red+nir if not specified
+  if (index_type %in% names(requirements)) {
+    return(requirements[[index_type]])
+  } else {
+    return(c("red", "nir"))  # Safe default
+  }
+}
+
+
 #' Calculate comprehensive vegetation indices
 #'
 #' @description
@@ -14,7 +94,9 @@
 #' @param green Optional green band
 #' @param swir1 Optional SWIR1 band
 #' @param swir2 Optional SWIR2 band
-#' @param red_edge Optional Red Edge band
+#' @param red_edge Optional Red Edge band (e.g. Sentinel-2 Band 5, ~705 nm)
+#' @param red_edge2 Optional second Red Edge band (e.g. Sentinel-2 Band 6, ~740 nm).
+#'   Required for S2REP index only.
 #' @param coastal Optional Coastal/Aerosol band
 #' @param nir2 Optional second NIR band
 #' @param index_type Vegetation index to calculate (see list_vegetation_indices())
@@ -24,6 +106,8 @@
 #' @param mask_invalid Mask invalid/extreme values
 #' @param scale_factor Scaling factor if needed (default: 1)
 #' @param auto_crs_fix Automatically fix CRS mismatches between bands
+#' @param region_boundary Optional boundary to crop and mask the result. Can be an sf object,
+#'   file path to shapefile, or region name (if get_region_boundary() is available)
 #' @param verbose Print progress messages
 #'
 #' @return SpatRaster of vegetation index
@@ -128,24 +212,31 @@
 #' savi <- calculate_vegetation_index(spectral_data = "/path/to/sentinel/bands/",
 #'                                   index_type = "SAVI", auto_detect_bands = TRUE)
 #'
-#' # Advanced index with custom parameters
-#' pri <- calculate_vegetation_index(red = red_band, nir = nir_band, green = green_band,
-#'                                  index_type = "PRI", clamp_range = c(-1, 1))
+#' # S2REP requires two red-edge bands (Sentinel-2 B5 and B6)
+#' s2rep <- calculate_vegetation_index(spectral_data = sentinel_data,
+#'                                     index_type = "S2REP", auto_detect_bands = TRUE)
 #'
 #' # Custom band names for multi-band data
 #' ndvi <- calculate_vegetation_index(spectral_data = sentinel_data,
 #'                                   band_names = c("B4", "B3", "B2", "B8"),
 #'                                   index_type = "NDVI")
+#'
+#' # With region boundary (auto CRS conversion and crop/mask)
+#' ndvi_ohio <- calculate_vegetation_index(red = red_band, nir = nir_band,
+#'                                        index_type = "NDVI",
+#'                                        region_boundary = boundary_sf,
+#'                                        verbose = TRUE)
 #' }
 #'
 #' @export
 calculate_vegetation_index <- function(spectral_data = NULL, red = NULL, nir = NULL,
                                        blue = NULL, green = NULL, swir1 = NULL, swir2 = NULL,
-                                       red_edge = NULL, coastal = NULL, nir2 = NULL,
+                                       red_edge = NULL, red_edge2 = NULL,
+                                       coastal = NULL, nir2 = NULL,
                                        index_type = "NDVI", auto_detect_bands = FALSE,
                                        band_names = NULL, clamp_range = NULL,
                                        mask_invalid = TRUE, scale_factor = 1,
-                                       auto_crs_fix = TRUE, verbose = FALSE) {
+                                       auto_crs_fix = TRUE, region_boundary = NULL, verbose = FALSE) {
 
   if (verbose) message(sprintf("Starting %s calculation with comprehensive input handling...", index_type))
 
@@ -191,71 +282,155 @@ calculate_vegetation_index <- function(spectral_data = NULL, red = NULL, nir = N
     red_edge <- bands$red_edge
     coastal <- bands$coastal
     nir2 <- bands$nir2
+    red_edge2 <- bands$red_edge2
   }
 
   # Input validation and loading with CRS checking
   if (verbose) message("Loading and validating input bands with CRS checking...")
-  red <- load_and_validate_band(red, "red", required = TRUE)
-  nir <- load_and_validate_band(nir, "nir", required = TRUE)
+
+  # Get required bands for this specific index
+  required_bands <- get_index_required_bands(index_type)
+
+  # Only load/validate bands that are required for this index
+  if ("red" %in% required_bands) {
+    red <- load_and_validate_band(red, "red", required = TRUE)
+  } else if (!is.null(red)) {
+    red <- load_and_validate_band(red, "red", required = FALSE)
+  }
+
+  if ("nir" %in% required_bands) {
+    nir <- load_and_validate_band(nir, "nir", required = TRUE)
+  } else if (!is.null(nir)) {
+    nir <- load_and_validate_band(nir, "nir", required = FALSE)
+  }
+
+  if ("green" %in% required_bands) {
+    green <- load_and_validate_band(green, "green", required = TRUE)
+  } else if (!is.null(green)) {
+    green <- load_and_validate_band(green, "green", required = FALSE)
+  }
+
+  if ("blue" %in% required_bands) {
+    blue <- load_and_validate_band(blue, "blue", required = TRUE)
+  } else if (!is.null(blue)) {
+    blue <- load_and_validate_band(blue, "blue", required = FALSE)
+  }
+
+  if ("swir1" %in% required_bands) {
+    swir1 <- load_and_validate_band(swir1, "swir1", required = TRUE)
+  } else if (!is.null(swir1)) {
+    swir1 <- load_and_validate_band(swir1, "swir1", required = FALSE)
+  }
+
+  if ("swir2" %in% required_bands) {
+    swir2 <- load_and_validate_band(swir2, "swir2", required = TRUE)
+  } else if (!is.null(swir2)) {
+    swir2 <- load_and_validate_band(swir2, "swir2", required = FALSE)
+  }
+
+  if ("red_edge" %in% required_bands) {
+    red_edge <- load_and_validate_band(red_edge, "red_edge", required = TRUE)
+  } else if (!is.null(red_edge)) {
+    red_edge <- load_and_validate_band(red_edge, "red_edge", required = FALSE)
+  }
+
+  if ("red_edge2" %in% required_bands) {
+    red_edge2 <- load_and_validate_band(red_edge2, "red_edge2", required = TRUE)
+  } else if (!is.null(red_edge2)) {
+    red_edge2 <- load_and_validate_band(red_edge2, "red_edge2", required = FALSE)
+  }
+
+  if ("coastal" %in% required_bands) {
+    coastal <- load_and_validate_band(coastal, "coastal", required = TRUE)
+  } else if (!is.null(coastal)) {
+    coastal <- load_and_validate_band(coastal, "coastal", required = FALSE)
+  }
+
+  if ("nir2" %in% required_bands) {
+    nir2 <- load_and_validate_band(nir2, "nir2", required = TRUE)
+  } else if (!is.null(nir2)) {
+    nir2 <- load_and_validate_band(nir2, "nir2", required = FALSE)
+  }
 
   # CRS compatibility checking
   if (verbose) message("Checking and fixing spatial compatibility...")
-  reference_crs <- terra::crs(red)
 
-  # Check and fix NIR CRS
-  if (!identical(terra::crs(nir), reference_crs)) {
-    if (auto_crs_fix) {
-      if (verbose) message("CRS mismatch detected for NIR band. Reprojecting...")
-      nir <- terra::project(nir, reference_crs)
-    } else {
-      stop("CRS mismatch between red and NIR bands. Set auto_crs_fix=TRUE to fix automatically.", call. = FALSE)
-    }
+  # Determine reference raster (use first available required band)
+  reference_raster <- NULL
+  if (!is.null(red) && inherits(red, "SpatRaster")) {
+    reference_raster <- red
+  } else if (!is.null(nir) && inherits(nir, "SpatRaster")) {
+    reference_raster <- nir
+  } else if (!is.null(green) && inherits(green, "SpatRaster")) {
+    reference_raster <- green
+  } else if (!is.null(blue) && inherits(blue, "SpatRaster")) {
+    reference_raster <- blue
+  } else if (!is.null(swir1) && inherits(swir1, "SpatRaster")) {
+    reference_raster <- swir1
+  } else if (!is.null(swir2) && inherits(swir2, "SpatRaster")) {
+    reference_raster <- swir2
+  } else if (!is.null(red_edge) && inherits(red_edge, "SpatRaster")) {
+    reference_raster <- red_edge
+  } else if (!is.null(red_edge2) && inherits(red_edge2, "SpatRaster")) {
+    reference_raster <- red_edge2
+  } else if (!is.null(coastal) && inherits(coastal, "SpatRaster")) {
+    reference_raster <- coastal
+  } else if (!is.null(nir2) && inherits(nir2, "SpatRaster")) {
+    reference_raster <- nir2
   }
 
-  # Align geometries if needed
-  if (!terra::compareGeom(red, nir, stopOnError = FALSE)) {
-    if (verbose) message("Geometry mismatch detected. Resampling NIR to match red...")
-    nir <- terra::resample(nir, red)
+  if (is.null(reference_raster)) {
+    stop("No valid raster band provided", call. = FALSE)
   }
 
-  # Load and align optional bands with CRS fixing
-  bands_to_process <- list(
-    blue = blue, green = green, swir1 = swir1, swir2 = swir2,
-    red_edge = red_edge, coastal = coastal, nir2 = nir2
+  reference_crs <- terra::crs(reference_raster)
+
+  # Align all bands to reference raster
+  all_bands <- list(
+    red = red, nir = nir, green = green, blue = blue,
+    swir1 = swir1, swir2 = swir2,
+    red_edge = red_edge, red_edge2 = red_edge2,
+    coastal = coastal, nir2 = nir2
   )
 
-  processed_bands <- list()
-  for (band_name in names(bands_to_process)) {
-    band_data <- bands_to_process[[band_name]]
-    if (!is.null(band_data)) {
-      band_raster <- load_and_validate_band(band_data, band_name, required = FALSE)
-      if (!is.null(band_raster)) {
-        # Fix CRS if needed
+  for (band_name in names(all_bands)) {
+    band_raster <- all_bands[[band_name]]
+    if (!is.null(band_raster) && inherits(band_raster, "SpatRaster")) {
+      # Check if it's not the reference raster itself
+      if (!identical(band_raster, reference_raster)) {
+        # Reproject if CRS mismatch
         if (!identical(terra::crs(band_raster), reference_crs) && auto_crs_fix) {
-          if (verbose) message(sprintf("Reprojecting %s band to match reference CRS", band_name))
+          if (verbose) message(sprintf("Reprojecting %s band...", band_name))
           band_raster <- terra::project(band_raster, reference_crs)
         }
-        # Align geometry
-        band_raster <- check_raster_compatibility(red, band_raster, auto_align = TRUE)
-        processed_bands[[band_name]] <- band_raster
+        # Resample if geometry mismatch
+        if (!terra::compareGeom(reference_raster, band_raster, stopOnError = FALSE)) {
+          if (verbose) message(sprintf("Resampling %s band...", band_name))
+          band_raster <- terra::resample(band_raster, reference_raster)
+        }
+        # Update the band variable
+        all_bands[[band_name]] <- band_raster
       }
     }
   }
 
-  # Assign processed bands
-  blue <- processed_bands$blue
-  green <- processed_bands$green
-  swir1 <- processed_bands$swir1
-  swir2 <- processed_bands$swir2
-  red_edge <- processed_bands$red_edge
-  coastal <- processed_bands$coastal
-  nir2 <- processed_bands$nir2
+  # Reassign aligned bands
+  red <- all_bands$red
+  nir <- all_bands$nir
+  green <- all_bands$green
+  blue <- all_bands$blue
+  swir1 <- all_bands$swir1
+  swir2 <- all_bands$swir2
+  red_edge <- all_bands$red_edge
+  red_edge2 <- all_bands$red_edge2
+  coastal <- all_bands$coastal
+  nir2 <- all_bands$nir2
 
   # Validate required bands for specific indices
-  if (!validate_required_bands(index_type, blue, green, swir1, swir2, red_edge, coastal, nir2, verbose)) {
+  if (!validate_required_bands(index_type, blue, green, swir1, swir2, red_edge, red_edge2, coastal, nir2, verbose)) {
     if (verbose) message(sprintf("Skipping %s calculation due to missing required bands", index_type))
-    # Return NA raster with same dimensions as red band
-    na_raster <- red
+    # Return NA raster with same dimensions as reference raster
+    na_raster <- reference_raster
     terra::values(na_raster) <- NA
     names(na_raster) <- index_type
     return(na_raster)
@@ -271,6 +446,7 @@ calculate_vegetation_index <- function(spectral_data = NULL, red = NULL, nir = N
     if (!is.null(swir1)) swir1 <- swir1 * scale_factor
     if (!is.null(swir2)) swir2 <- swir2 * scale_factor
     if (!is.null(red_edge)) red_edge <- red_edge * scale_factor
+    if (!is.null(red_edge2)) red_edge2 <- red_edge2 * scale_factor
     if (!is.null(coastal)) coastal <- coastal * scale_factor
     if (!is.null(nir2)) nir2 <- nir2 * scale_factor
   }
@@ -278,7 +454,7 @@ calculate_vegetation_index <- function(spectral_data = NULL, red = NULL, nir = N
   # Calculate vegetation index
   if (verbose) message(sprintf("Computing %s index...", index_type))
   index <- calculate_index_by_type(index_type, red, nir, blue, green, swir1, swir2,
-                                   red_edge, coastal, nir2, verbose)
+                                   red_edge, red_edge2, coastal, nir2, verbose)
 
   # Apply clamp range if specified
   if (!is.null(clamp_range)) {
@@ -303,6 +479,87 @@ calculate_vegetation_index <- function(spectral_data = NULL, red = NULL, nir = N
     return(na_raster)
   }
 
+  # Apply region boundary if provided
+  if (!is.null(region_boundary)) {
+    if (verbose) message("Applying region boundary...")
+
+    tryCatch({
+      # Get the boundary (could be sf object, file path, or state/county name)
+      if (is.character(region_boundary)) {
+        # For strings, check if it looks like a file path (has extension) or a region name
+        has_extension <- grepl("\\.(shp|geojson|gpkg|kml|json)$", tolower(region_boundary))
+
+        if (has_extension && file.exists(region_boundary)) {
+          # It's a file path that exists
+          if (verbose) message(sprintf("Loading boundary from file: %s", region_boundary))
+          boundary <- sf::st_read(region_boundary, quiet = !verbose)
+        } else {
+          # Treat as region name - call get_region_boundary()
+          if (verbose) message(sprintf("Fetching boundary for region: '%s'", region_boundary))
+          boundary <- get_region_boundary(region_boundary, verbose = verbose)
+        }
+      } else if (inherits(region_boundary, c("sf", "sfc"))) {
+        if (verbose) message("Using provided sf object as boundary")
+        boundary <- region_boundary
+      } else if (is.numeric(region_boundary) && length(region_boundary) == 4) {
+        # Treat as c(xmin, ymin, xmax, ymax) bounding box
+        if (verbose) message("Using numeric bounding box as boundary")
+        boundary <- sf::st_as_sf(sf::st_as_sfc(sf::st_bbox(
+          c(xmin = region_boundary[1], ymin = region_boundary[2],
+            xmax = region_boundary[3], ymax = region_boundary[4]),
+          crs = sf::st_crs(4326)
+        )))
+      } else {
+        stop("region_boundary must be either an sf object, file path, region name, or numeric bbox c(xmin,ymin,xmax,ymax)", call. = FALSE)
+      }
+
+      # Check and fix CRS mismatch
+      raster_crs <- terra::crs(index)
+      boundary_crs <- sf::st_crs(boundary)
+
+      # More robust CRS comparison
+      crs_match <- tryCatch({
+        # Try to compare using st_crs
+        sf::st_crs(boundary) == sf::st_crs(raster_crs)
+      }, error = function(e) {
+        # If comparison fails, assume mismatch and reproject
+        FALSE
+      })
+
+      if (!is.na(boundary_crs$input) && !is.na(raster_crs)) {
+        if (!crs_match) {
+          if (verbose) message("CRS mismatch detected between boundary and raster. Reprojecting boundary to match raster...")
+          boundary <- sf::st_transform(boundary, crs = raster_crs)
+        } else {
+          if (verbose) message("CRS match confirmed between boundary and raster")
+        }
+      }
+
+      # Convert to terra vect format
+      boundary_vect <- terra::vect(boundary)
+
+      # Crop and mask with validation
+      if (verbose) message("Cropping raster to boundary extent...")
+      index_original <- index
+      index <- terra::crop(index, boundary_vect)
+
+      # Validate crop worked
+      if (terra::ncell(index) == 0) {
+        warning("Crop operation resulted in empty raster. Boundary may not overlap with data. Returning original raster.", call. = FALSE)
+        index <- index_original
+      } else {
+        if (verbose) message(sprintf("Cropped raster dimensions: %d x %d cells", terra::nrow(index), terra::ncol(index)))
+
+        if (verbose) message("Masking raster to boundary shape...")
+        index <- terra::mask(index, boundary_vect)
+
+        if (verbose) message("Region boundary applied successfully")
+      }
+
+    }, error = function(e) {
+      warning(sprintf("Failed to apply region boundary: %s. Returning uncropped result.", e$message), call. = FALSE)
+    })
+  }
 
   names(index) <- index_type
   return(index)
@@ -659,18 +916,44 @@ list_vegetation_indices <- function(category = "all", application = "all", detai
       # Enhanced indices (12)
       "Red, NIR, Blue", "Red, NIR", "Red, NIR", "Red, NIR", "Red, NIR",
       "Red, NIR", "Red, Green, Blue", "Red, NIR", "Red, NIR", "Red, NIR", "Red, NIR", "Red, NIR",
-      # Advanced indices (10)
-      "NIR, RedEdge", "RedEdge, NIR", "RedEdge, NIR", "RedEdge", "RedEdge, NIR",
-      "Red, Green", "RedEdge, Green", "RedEdge, Green", "RedEdge, NIR", "Red, Green",
-      # Stress indices (12)
-      "Green, NIR", "Red, NIR", "RedEdge, Green", "NIR, SWIR1", "Red, Green",
-      "Red, Green", "Red, NIR", "Red, NIR", "Red, NIR", "Red, Blue", "Red, NIR", "Red, Blue",
+      # Advanced indices (10): NDRE, MTCI, IRECI, S2REP, PSRI, CRI1, CRI2, ARI1, ARI2, MCARI
+      "NIR, RedEdge",
+      "Red, RedEdge, NIR",
+      "Red, RedEdge, NIR",
+      "Red, RedEdge1 (B5), RedEdge2 (B6)",
+      "Red, Green, RedEdge",
+      "Green, Red",
+      "Green, RedEdge",
+      "Green, RedEdge",
+      "Green, RedEdge, NIR",
+      "RedEdge, Red, Green",
+      # Stress indices (12): PRI, SIPI, CCI, NDNI, CARI, TCARI, MTVI1, MTVI2, TVI, NPCI, RARS, NPQI
+      "531 nm, 570 nm (hyperspectral only)",
+      "Red, Green, NIR",
+      "RedEdge, Red",
+      "NIR, SWIR1",
+      "RedEdge, Red, Green",
+      "RedEdge, Red, Green",
+      "Red, Green, NIR",
+      "Red, Green, NIR",
+      "Red, Green, NIR",
+      "Red, Blue",
+      "Red, NIR",
+      "415 nm, 435 nm (hyperspectral only)",
       # Water indices (8)
       "Green, NIR", "Green, SWIR1", "NIR, SWIR1", "NIR, SWIR1", "NIR, SWIR1",
       "NIR, SWIR1", "NIR, SWIR1", "NIR, SWIR1",
-      # Specialized indices (10)
-      "Red, NIR", "Red, NIR", "Red, NIR", "NIR, SWIR2", "Red, NIR",
-      "Green, SWIR1", "Red, Green", "Green, NIR", "Red, Green", "Green, Blue, NIR"
+      # Specialized indices (10): LAI, FAPAR, FCOVER, NBR, BAI, NDSI, GRVI, VIG, CI, GBNDVI
+      "Red, NIR, Blue",
+      "Red, NIR",
+      "Red, NIR",
+      "NIR, SWIR2",
+      "Red, NIR",
+      "Green, SWIR1",
+      "Red, Green",
+      "Green, NIR",
+      "Red, Green",
+      "Green, Blue, NIR"
     ),
 
     stringsAsFactors = FALSE
@@ -868,16 +1151,74 @@ calculate_multiple_indices <- function(spectral_data = NULL, indices = c("NDVI",
   # Get boundary
   if (!is.null(region_boundary)) {
     if (verbose) message("Applying region boundary...")
-    boundary <- get_region_boundary(region_boundary)
-    boundary_vect <- terra::vect(boundary)
 
-    index_results <- lapply(index_results, function(idx_raster) {
-      if (!is.null(idx_raster) && inherits(idx_raster, "SpatRaster")) {
-        cropped <- terra::crop(idx_raster, boundary_vect)
-        terra::mask(cropped, boundary_vect)
+    tryCatch({
+      # Get the boundary
+      if (is.character(region_boundary)) {
+        # For strings, check if it looks like a file path or a region name
+        has_extension <- grepl("\\.(shp|geojson|gpkg|kml|json)$", tolower(region_boundary))
+
+        if (has_extension && file.exists(region_boundary)) {
+          # It's a file path that exists
+          if (verbose) message(sprintf("Loading boundary from file: %s", region_boundary))
+          boundary <- sf::st_read(region_boundary, quiet = !verbose)
+        } else {
+          # Treat as region name - call get_region_boundary()
+          if (verbose) message(sprintf("Fetching boundary for region: '%s'", region_boundary))
+          boundary <- get_region_boundary(region_boundary, verbose = verbose)
+        }
+      } else if (inherits(region_boundary, c("sf", "sfc"))) {
+        if (verbose) message("Using provided sf object as boundary")
+        boundary <- region_boundary
+      } else if (is.numeric(region_boundary) && length(region_boundary) == 4) {
+        # Treat as c(xmin, ymin, xmax, ymax) bounding box
+        if (verbose) message("Using numeric bounding box as boundary")
+        boundary <- sf::st_as_sf(sf::st_as_sfc(sf::st_bbox(
+          c(xmin = region_boundary[1], ymin = region_boundary[2],
+            xmax = region_boundary[3], ymax = region_boundary[4]),
+          crs = sf::st_crs(4326)
+        )))
       } else {
-        idx_raster
+        stop("region_boundary must be either an sf object, file path, region name, or numeric bbox c(xmin,ymin,xmax,ymax)", call. = FALSE)
       }
+
+      index_results <- lapply(index_results, function(idx_raster) {
+        if (!is.null(idx_raster) && inherits(idx_raster, "SpatRaster")) {
+          # Check and fix CRS mismatch
+          raster_crs <- terra::crs(idx_raster)
+
+          # More robust CRS comparison
+          crs_match <- tryCatch({
+            sf::st_crs(boundary) == sf::st_crs(raster_crs)
+          }, error = function(e) FALSE)
+
+          if (!crs_match) {
+            if (verbose) message("Reprojecting boundary to match raster CRS...")
+            boundary <- sf::st_transform(boundary, crs = raster_crs)
+          }
+
+          # Convert to terra vect
+          boundary_vect <- terra::vect(boundary)
+
+          # Crop and mask
+          cropped <- terra::crop(idx_raster, boundary_vect)
+
+          # Validate crop worked
+          if (terra::ncell(cropped) == 0) {
+            if (verbose) warning("Crop resulted in empty raster for this index. Returning original.", call. = FALSE)
+            return(idx_raster)
+          }
+
+          terra::mask(cropped, boundary_vect)
+        } else {
+          idx_raster
+        }
+      })
+
+      if (verbose) message("Region boundary applied successfully to all indices")
+
+    }, error = function(e) {
+      warning(sprintf("Failed to apply region boundary: %s. Returning uncropped results.", e$message), call. = FALSE)
     })
   }
 
@@ -1339,7 +1680,9 @@ extract_bands_from_raster <- function(spectral_data, auto_detect, band_names, ve
   layer_names <- names(spectral_data)
 
   bands <- list(red = NULL, nir = NULL, blue = NULL, green = NULL,
-                swir1 = NULL, swir2 = NULL, red_edge = NULL, coastal = NULL, nir2 = NULL)
+                swir1 = NULL, swir2 = NULL,
+                red_edge = NULL, red_edge2 = NULL,
+                coastal = NULL, nir2 = NULL)
 
   if (auto_detect || is.null(band_names)) {
     # Auto-detect bands based on common naming conventions
@@ -1369,6 +1712,10 @@ extract_bands_from_raster <- function(spectral_data, auto_detect, band_names, ve
   if (is.null(bands$red_edge) && "red_edge" %in% layer_names) {
     bands$red_edge <- spectral_data[["red_edge"]]
     if (verbose) message("Direct match found for red_edge band")
+  }
+  if (is.null(bands$red_edge2) && "red_edge2" %in% layer_names) {
+    bands$red_edge2 <- spectral_data[["red_edge2"]]
+    if (verbose) message("Direct match found for red_edge2 band")
   }
   if (is.null(bands$swir1) && "swir1" %in% layer_names) {
     bands$swir1 <- spectral_data[["swir1"]]
@@ -1409,18 +1756,26 @@ extract_bands_from_raster <- function(spectral_data, auto_detect, band_names, ve
 auto_detect_spectral_bands <- function(spectral_data, layer_names, verbose) {
 
   bands <- list(red = NULL, nir = NULL, blue = NULL, green = NULL,
-                swir1 = NULL, swir2 = NULL, red_edge = NULL, coastal = NULL, nir2 = NULL)
+                swir1 = NULL, swir2 = NULL,
+                red_edge = NULL, red_edge2 = NULL,
+                coastal = NULL, nir2 = NULL)
 
   # Comprehensive band naming patterns
+  # NOTE: red_edge2 patterns must be checked BEFORE red_edge to avoid partial-match
+  # collisions (e.g. "B06" matching the red_edge "B05" pattern via grepl).
   patterns <- list(
-    red = c("red", "RED", "Red", "B4", "b4", "band4", "Band_4", "Band4", "B04", "b04"),
-    nir = c("nir", "NIR", "Nir", "B8", "b8", "band8", "Band_8", "Band8", "B5", "b5", "near_infrared", "B08", "b08"),
-    blue = c("blue", "BLUE", "Blue", "B2", "b2", "band2", "Band_2", "Band2", "B02", "b02"),
-    green = c("green", "GREEN", "Green", "B3", "b3", "band3", "Band_3", "Band3", "B03", "b03"),
-    swir1 = c("swir1", "SWIR1", "Swir1", "B11", "b11", "B6", "b6", "shortwave_infrared_1", "SWIR_1"),
-    swir2 = c("swir2", "SWIR2", "Swir2", "B12", "b12", "B7", "b7", "shortwave_infrared_2", "SWIR_2"),
-    red_edge = c("rededge", "RedEdge", "red_edge", "RED_EDGE", "B5", "b5", "RE", "re", "B05", "b05"),
-    coastal = c("coastal", "COASTAL", "Coastal", "B1", "b1", "aerosol", "B01", "b01", "COASTAL_AEROSOL")
+    red      = c("red", "RED", "Red", "B4", "b4", "band4", "Band_4", "Band4", "B04", "b04"),
+    nir      = c("nir", "NIR", "Nir", "B8", "b8", "band8", "Band_8", "Band8", "near_infrared", "B08", "b08"),
+    blue     = c("blue", "BLUE", "Blue", "B2", "b2", "band2", "Band_2", "Band2", "B02", "b02"),
+    green    = c("green", "GREEN", "Green", "B3", "b3", "band3", "Band_3", "Band3", "B03", "b03"),
+    swir1    = c("swir1", "SWIR1", "Swir1", "B11", "b11", "shortwave_infrared_1", "SWIR_1"),
+    swir2    = c("swir2", "SWIR2", "Swir2", "B12", "b12", "B7", "b7", "shortwave_infrared_2", "SWIR_2"),
+    # red_edge2 BEFORE red_edge so "B06" / "RE2" are not consumed by red_edge patterns
+    red_edge2 = c("red_edge2", "RedEdge2", "rededge2", "RED_EDGE2",
+                  "RE2", "re2", "B6", "b6", "B06", "b06"),
+    red_edge  = c("red_edge", "rededge", "RedEdge", "RED_EDGE",
+                  "RE", "re", "B5", "b5", "B05", "b05"),
+    coastal   = c("coastal", "COASTAL", "Coastal", "B1", "b1", "aerosol", "B01", "b01", "COASTAL_AEROSOL")
   )
 
   # Try exact matches first
@@ -1478,38 +1833,48 @@ load_and_validate_band <- function(band_data, band_name, required = FALSE) {
 
 #' Validate required bands for specific indices
 #' @keywords internal
-validate_required_bands <- function(index_type, blue, green, swir1, swir2, red_edge, coastal, nir2, verbose = FALSE) {
+validate_required_bands <- function(index_type, blue, green, swir1, swir2, red_edge, red_edge2, coastal, nir2, verbose = FALSE) {
 
   requirements <- list(
-    "EVI" = list(blue = blue),
-    "GNDVI" = list(green = green),
-    "ARVI" = list(blue = blue),
-    "VARI" = list(blue = blue, green = green),
-    "NDWI" = list(green = green),
-    "MNDWI" = list(green = green, swir1 = swir1),
-    "NDMI" = list(swir1 = swir1),
-    "MSI" = list(swir1 = swir1),
-    "NDII" = list(swir1 = swir1),
-    "NDRE" = list(red_edge = red_edge),
-    "MTCI" = list(red_edge = red_edge),
-    "IRECI" = list(red_edge = red_edge),
-    "S2REP" = list(red_edge = red_edge),
-    "PSRI" = list(red_edge = red_edge),
-    "NBR" = list(swir2 = swir2),
-    "BAI" = list(swir1 = swir1),
-    "NDSI" = list(green = green, swir1 = swir1),
-    "CCI" = list(red_edge = red_edge),
-    "LAI" = list(blue = blue),
-    "FAPAR" = list(blue = blue),
-    "MTVI1" = list(green = green),
-    "MTVI2" = list(green = green),
-    "WI" = list(swir1 = swir1),
-    "SRWI" = list(swir1 = swir1),
-    "LSWI" = list(swir1 = swir1),
-    "CI" = list(green = green),
+    "EVI"    = list(blue = blue),
+    "GNDVI"  = list(green = green),
+    "ARVI"   = list(blue = blue),
+    "VARI"   = list(blue = blue, green = green),
+    "NDWI"   = list(green = green),
+    "MNDWI"  = list(green = green, swir1 = swir1),
+    "NDMI"   = list(swir1 = swir1),
+    "MSI"    = list(swir1 = swir1),
+    "NDII"   = list(swir1 = swir1),
+    "NDRE"   = list(red_edge = red_edge),
+    "MTCI"   = list(red_edge = red_edge),
+    "IRECI"  = list(red_edge = red_edge),
+    # S2REP requires BOTH red_edge (B5, ~705 nm) AND red_edge2 (B6, ~740 nm)
+    "S2REP"  = list(red_edge = red_edge, red_edge2 = red_edge2),
+    "PSRI"   = list(green = green, red_edge = red_edge),
+    "CCI"    = list(red_edge = red_edge),
+    "NBR"    = list(swir2 = swir2),
+    "BAI"    = list(swir1 = swir1),
+    "NDSI"   = list(green = green, swir1 = swir1),
+    "LAI"    = list(blue = blue),
+    # FAPAR formula is -0.161 + 1.257 * NDVI; only needs red + nir (no blue)
+    "MTVI1"  = list(green = green),
+    "MTVI2"  = list(green = green),
+    "SIPI"   = list(green = green),
+    "TVI"    = list(green = green),
+    "CARI"   = list(red_edge = red_edge, green = green),
+    "TCARI"  = list(red_edge = red_edge, green = green),
+    "MCARI"  = list(red_edge = red_edge, green = green),
+    "WI"     = list(swir1 = swir1),
+    "SRWI"   = list(swir1 = swir1),
+    "LSWI"   = list(swir1 = swir1),
+    "CI"     = list(green = green),
     "GBNDVI" = list(green = green, blue = blue),
-    "NPCI" = list(blue = blue),
-    "NPQI" = list(blue = blue)
+    "NPCI"   = list(blue = blue),
+    "ARI1"   = list(red_edge = red_edge),
+    "ARI2"   = list(red_edge = red_edge),
+    "CRI2"   = list(red_edge = red_edge)
+    # PRI and NPQI are hyperspectral-only; they return NA with a warning in
+    # calculate_index_by_type() rather than failing band validation here.
   )
 
   if (index_type %in% names(requirements)) {
@@ -1546,7 +1911,7 @@ validate_required_bands <- function(index_type, blue, green, swir1, swir2, red_e
 #' Calculate index by type
 #' @keywords internal
 calculate_index_by_type <- function(index_type, red, nir, blue, green, swir1, swir2,
-                                    red_edge, coastal, nir2, verbose) {
+                                    red_edge, red_edge2 = NULL, coastal, nir2, verbose) {
 
   index <- switch(index_type,
                   # ==================== BASIC VEGETATION INDICES ====================
@@ -1673,8 +2038,25 @@ calculate_index_by_type <- function(index_type, red, nir, blue, green, swir1, sw
                   },
 
                   "S2REP" = {
-                    # Sentinel-2 Red-Edge Position
-                    705 + 35 * ((red + red_edge) / 2 - red) / (red_edge - red)
+                    # Sentinel-2 Red-Edge Position (Frampton et al., 2013)
+                    # Formula: 705 + 35 * ((rho_Red + rho_RE2)/2 - rho_RE1) / (rho_RE2 - rho_RE1)
+                    #   red       = Sentinel-2 Band 4 (~665 nm)
+                    #   red_edge  = Sentinel-2 Band 5 (~705 nm, RE1)
+                    #   red_edge2 = Sentinel-2 Band 6 (~740 nm, RE2)
+                    # The previous formula used the same band for both RE1 and RE2,
+                    # making it a mathematical identity that always returned 722.5.
+                    if (is.null(red_edge2)) {
+                      warning(
+                        "S2REP requires two distinct red-edge bands: ",
+                        "red_edge (Sentinel-2 B5, ~705 nm) and red_edge2 (Sentinel-2 B6, ~740 nm). ",
+                        "Provide red_edge2 = <SpatRaster> to calculate_vegetation_index(). ",
+                        "Returning NA raster.",
+                        call. = FALSE
+                      )
+                      red * 0 + NA
+                    } else {
+                      705 + 35 * ((red + red_edge2) / 2 - red_edge) / (red_edge2 - red_edge)
+                    }
                   },
 
                   "PSRI" = {
@@ -1697,9 +2079,22 @@ calculate_index_by_type <- function(index_type, red, nir, blue, green, swir1, sw
 
                   # ==================== STRESS DETECTION INDICES ====================
                   "PRI" = {
-                    # Photochemical Reflectance Index
-                    # Using 531nm (green) as proxy for 531nm reference band
-                    (green - nir) / (green + nir)
+                    # Photochemical Reflectance Index (Gamon et al., 1992)
+                    # Correct formula: (R531 - R570) / (R531 + R570)
+                    # Both wavelengths are in the narrow green spectral region (~530-570 nm),
+                    # detecting xanthophyll cycle pigment dynamics.
+                    # This index CANNOT be computed from broadband satellite sensors
+                    # (Landsat, Sentinel-2, MODIS) - it requires hyperspectral data
+                    # (e.g. AVIRIS, CHRIS/PROBA, field spectrometers).
+                    # Using broadband green vs NIR produces scientifically invalid results.
+                    warning(
+                      "PRI (Gamon et al., 1992) requires narrowband reflectance at 531 nm and 570 nm. ",
+                      "These bands are unavailable on standard broadband sensors (Landsat/Sentinel-2/MODIS). ",
+                      "Supply hyperspectral data with layers named 'band_531' and 'band_570' via spectral_data. ",
+                      "Returning NA raster - broadband substitution is not scientifically valid.",
+                      call. = FALSE
+                    )
+                    red * 0 + NA
                   },
 
                   "SIPI" = {
@@ -1754,8 +2149,22 @@ calculate_index_by_type <- function(index_type, red, nir, blue, green, swir1, sw
                   },
 
                   "NPQI" = {
-                    # Normalized Phaeophytinization Index
-                    (red - blue) / (red + blue)
+                    # Normalized Phaeophytinization Index (Barnes et al., 1992)
+                    # Correct formula: (R415 - R435) / (R415 + R435)
+                    # Both wavelengths are in the violet Soret absorption band (~415-435 nm),
+                    # detecting chlorophyll degradation (pheophytinization).
+                    # This index CANNOT be computed from broadband satellite sensors
+                    # (Landsat, Sentinel-2, MODIS) - it requires hyperspectral data.
+                    # Note: the previous implementation was also identical to NPCI,
+                    # which is a separate index with a different physical basis.
+                    warning(
+                      "NPQI (Barnes et al., 1992) requires narrowband reflectance at 415 nm and 435 nm. ",
+                      "These bands are unavailable on standard broadband sensors (Landsat/Sentinel-2/MODIS). ",
+                      "Supply hyperspectral data with layers named 'band_415' and 'band_435' via spectral_data. ",
+                      "Returning NA raster - broadband substitution is not scientifically valid.",
+                      call. = FALSE
+                    )
+                    red * 0 + NA
                   },
 
                   # ==================== WATER/MOISTURE INDICES ====================
@@ -2536,7 +2945,7 @@ get_index_formulas <- function(indices) {
     "NDRE" = "(NIR - RedEdge) / (NIR + RedEdge)",
     "MTCI" = "(RedEdge - Red) / (NIR - Red)",
     "IRECI" = "(RedEdge - Red) / (RedEdge / NIR)",
-    "S2REP" = "705 + 35 * ((Red + RedEdge)/2 - Red) / (RedEdge - Red)",
+    "S2REP" = "705 + 35 * ((Red + RedEdge2)/2 - RedEdge1) / (RedEdge2 - RedEdge1)  [Sentinel-2 B4 + B5 (~705nm) + B6 (~740nm)]",
     "PSRI" = "(Red - Green) / RedEdge",
     "CRI1" = "(1 / Green) - (1 / Red)",
     "CRI2" = "(1 / Green) - (1 / RedEdge)",
@@ -2545,7 +2954,7 @@ get_index_formulas <- function(indices) {
     "MCARI" = "((RedEdge - Red) - 0.2*(RedEdge - Green)) * (RedEdge / Red)",
 
     # ==================== STRESS AND CHLOROPHYLL INDICES (12) ====================
-    "PRI" = "(Green - NIR) / (Green + NIR)",
+    "PRI" = "(R531 - R570) / (R531 + R570)  [hyperspectral only: requires 531 nm and 570 nm narrowbands]",
     "SIPI" = "(NIR - Red) / (NIR - Green)",
     "CCI" = "(RedEdge - Red) / (RedEdge + Red)",
     "NDNI" = "(log(1/NIR) - log(1/SWIR1)) / (log(1/NIR) + log(1/SWIR1))",
@@ -2556,7 +2965,7 @@ get_index_formulas <- function(indices) {
     "TVI" = "0.5 * (120*(NIR - Green) - 200*(Red - Green))",
     "NPCI" = "(Red - Blue) / (Red + Blue)",
     "RARS" = "Red / NIR",
-    "NPQI" = "(Red - Blue) / (Red + Blue)",
+    "NPQI" = "(R415 - R435) / (R415 + R435)  [hyperspectral only: requires 415 nm and 435 nm narrowbands]",
 
     # ==================== WATER AND MOISTURE INDICES (8) ====================
     "NDWI" = "(Green - NIR) / (Green + NIR)",

@@ -5,7 +5,8 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
   fig.width = 10,
-  fig.height = 8
+  fig.height = 8,
+  eval = TRUE 
 )
 
 ## ----enhanced-ndvi, eval=FALSE------------------------------------------------
@@ -412,7 +413,7 @@ knitr::opts_chunk$set(
 # 
 # for (field in fields) {
 #   field_data <- rotation_analysis[rotation_analysis$field == field, ]
-#   rotation_patterns[[field]] <- paste(field_data$crop, collapse = " → ")
+#   rotation_patterns[[field]] <- paste(field_data$crop, collapse = " Ã¢â€ â€™ ")
 # }
 # 
 # print("Rotation Patterns:")
@@ -674,10 +675,10 @@ knitr::opts_chunk$set(
 ## ----best-practices, eval=FALSE-----------------------------------------------
 # # 1. Always validate your data
 # print("Data Validation Checklist:")
-# print("✓ Check coordinate reference systems")
-# print("✓ Verify date ranges match growing season")
-# print("✓ Validate vegetation index ranges")
-# print("✓ Confirm crop mask accuracy")
+# print("Check coordinate reference systems")
+# print("Verify date ranges match growing season")
+# print("Validate vegetation index ranges")
+# print("Confirm crop mask accuracy")
 # 
 # # 2. Use appropriate indices for your crop type
 # crop_index_recommendations <- list(

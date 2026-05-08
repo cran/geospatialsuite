@@ -14,10 +14,13 @@
 #' @importFrom ggplot2 ggplot aes geom_sf geom_tile geom_text geom_raster coord_sf coord_fixed theme_minimal theme element_text labs scale_fill_gradient2 scale_fill_gradientn scale_color_manual ggsave scale_colour_viridis_c scale_fill_viridis_c
 #' @importFrom viridis scale_fill_viridis scale_color_viridis
 #' @author Olatunde D. Akanbi \email{olatunde.akanbi@case.edu}
+#' @author Vibha Mandayam \email{vibha.mandayam@case.edu}
+#' @author Yinghui Wu \email{yinghui.wu2@case.edu}
+#' @author Jeffrey Yarus \email{jmy41@case.edu}
 #' @author Erika I. Barcelos \email{erika.barcelos@case.edu}
 #' @author Roger H. French \email{roger.french@case.edu}
 #' @description
-#' GeoSpatialSuite provides universal functions for geospatial analysis and reliable
+#' geospatialsuite provides universal functions for geospatial analysis and reliable
 #' visualization that work with any region for multimodal data. Features include
 #' 60+ vegetation indices, efficient terra-based visualization, universal spatial mapping,
 #' dynamic crop analysis, water quality assessment, and publication-quality mapping with
@@ -134,7 +137,7 @@
 # Package startup message - UPDATED
 .onAttach <- function(libname, pkgname) {
   packageStartupMessage("==================================================")
-  packageStartupMessage("GeoSpatialSuite v0.1.1 - Reliable Spatiotemporal Analysis")
+  packageStartupMessage("geospatialsuite v0.2.0 - Reliable Spatiotemporal Analysis")
   packageStartupMessage("==================================================")
   packageStartupMessage("Universal - 60+ Vegetation Indices - Robust & Simple")
   packageStartupMessage("")

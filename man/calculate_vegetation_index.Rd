@@ -13,6 +13,7 @@ calculate_vegetation_index(
   swir1 = NULL,
   swir2 = NULL,
   red_edge = NULL,
+  red_edge2 = NULL,
   coastal = NULL,
   nir2 = NULL,
   index_type = "NDVI",
@@ -22,6 +23,7 @@ calculate_vegetation_index(
   mask_invalid = TRUE,
   scale_factor = 1,
   auto_crs_fix = TRUE,
+  region_boundary = NULL,
   verbose = FALSE
 )
 }
@@ -41,7 +43,10 @@ directory path, or list of raster files}
 
 \item{swir2}{Optional SWIR2 band}
 
-\item{red_edge}{Optional Red Edge band}
+\item{red_edge}{Optional Red Edge band (e.g. Sentinel-2 Band 5, ~705 nm)}
+
+\item{red_edge2}{Optional second Red Edge band (e.g. Sentinel-2 Band 6, ~740 nm).
+Required for S2REP index only.}
 
 \item{coastal}{Optional Coastal/Aerosol band}
 
@@ -60,6 +65,9 @@ directory path, or list of raster files}
 \item{scale_factor}{Scaling factor if needed (default: 1)}
 
 \item{auto_crs_fix}{Automatically fix CRS mismatches between bands}
+
+\item{region_boundary}{Optional boundary to crop and mask the result. Can be an sf object,
+file path to shapefile, or region name (if get_region_boundary() is available)}
 
 \item{verbose}{Print progress messages}
 }
@@ -185,14 +193,20 @@ evi <- calculate_vegetation_index(spectral_data = landsat_stack,
 savi <- calculate_vegetation_index(spectral_data = "/path/to/sentinel/bands/",
                                   index_type = "SAVI", auto_detect_bands = TRUE)
 
-# Advanced index with custom parameters
-pri <- calculate_vegetation_index(red = red_band, nir = nir_band, green = green_band,
-                                 index_type = "PRI", clamp_range = c(-1, 1))
+# S2REP requires two red-edge bands (Sentinel-2 B5 and B6)
+s2rep <- calculate_vegetation_index(spectral_data = sentinel_data,
+                                    index_type = "S2REP", auto_detect_bands = TRUE)
 
 # Custom band names for multi-band data
 ndvi <- calculate_vegetation_index(spectral_data = sentinel_data,
                                   band_names = c("B4", "B3", "B2", "B8"),
                                   index_type = "NDVI")
+
+# With region boundary (auto CRS conversion and crop/mask)
+ndvi_ohio <- calculate_vegetation_index(red = red_band, nir = nir_band,
+                                       index_type = "NDVI",
+                                       region_boundary = boundary_sf,
+                                       verbose = TRUE)
 }
 
 }

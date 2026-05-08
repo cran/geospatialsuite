@@ -10,10 +10,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<meta name="author" content="GeoSpatialSuite Development Team" />
+<meta name="author" content="geospatialsuite Development Team" />
 
 
-<title>Using analyze_crop_vegetation() in GeoSpatialSuite</title>
+<title>Using analyze_crop_vegetation() in geospatialsuite</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -338,11 +338,12 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 
 <h1 class="title toc-ignore">Using analyze_crop_vegetation() in
-GeoSpatialSuite</h1>
-<h4 class="author">GeoSpatialSuite Development Team</h4>
+geospatialsuite</h1>
+<h4 class="author">geospatialsuite Development Team</h4>
 
 
 
+<hr />
 <div id="complete-documentation-analyze_crop_vegetation-output-structure" class="section level1">
 <h1>Complete Documentation: analyze_crop_vegetation() Output
 Structure</h1>
@@ -355,16 +356,24 @@ results.</p>
 </div>
 <div id="output-structure" class="section level2">
 <h2>Output Structure</h2>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">analyze_crop_vegetation</span>(</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>  <span class="at">spectral_data =</span> your_data,</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>  <span class="at">crop_type =</span> <span class="st">&quot;corn&quot;</span>,</span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;comprehensive&quot;</span></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>)</span>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>red <span class="ot">&lt;-</span> <span class="fu">load_sample_data</span>(<span class="st">&quot;sample_red.rds&quot;</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>nir <span class="ot">&lt;-</span> <span class="fu">load_sample_data</span>(<span class="st">&quot;sample_nir.rds&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>blue <span class="ot">&lt;-</span> <span class="fu">load_sample_data</span>(<span class="st">&quot;sample_blue.rds&quot;</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>spectral_stack <span class="ot">&lt;-</span> <span class="fu">c</span>(red, nir, blue)</span>
 <span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co"># Structure:</span></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>result<span class="sc">$</span>vegetation_indices      <span class="co"># SpatRaster with calculated indices</span></span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>result<span class="sc">$</span>analysis_results        <span class="co"># Detailed analysis results</span></span>
-<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>result<span class="sc">$</span>metadata                <span class="co"># Processing metadata</span></span></code></pre></div>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">names</span>(spectral_stack) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;red&quot;</span>, <span class="st">&quot;nir&quot;</span>, <span class="st">&quot;blue&quot;</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>result <span class="ot">&lt;-</span> <span class="fu">analyze_crop_vegetation</span>(</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>  <span class="at">spectral_data =</span> spectral_stack,</span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>  <span class="at">crop_type =</span> <span class="st">&quot;corn&quot;</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>  <span class="at">analysis_type =</span> <span class="st">&quot;comprehensive&quot;</span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>)</span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a><span class="co"># Structure:</span></span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a>result<span class="sc">$</span>vegetation_indices      <span class="co"># SpatRaster with calculated indices</span></span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>result<span class="sc">$</span>analysis_results        <span class="co"># Detailed analysis results</span></span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a>result<span class="sc">$</span>metadata                <span class="co"># Processing metadata</span></span></code></pre></div>
 <hr />
 </div>
 <div id="vegetation_indices-spatraster" class="section level2">
@@ -372,10 +381,13 @@ results.</p>
 <p><strong>Type:</strong> terra::SpatRaster object (multi-layer)</p>
 <p><strong>Description:</strong> A raster stack containing all
 calculated vegetation indices for the specified crop type.</p>
-<p><strong>Contents:</strong> - Each layer is a different vegetation
-index (NDVI, EVI, GNDVI, etc.) - Values are the actual index
-calculations for each pixel - Layer names correspond to the index
-abbreviations</p>
+<p><strong>Contents:</strong></p>
+<ul>
+<li>Each layer is a different vegetation index (NDVI, EVI, GNDVI,
+etc.)</li>
+<li>Values are the actual index calculations for each pixel</li>
+<li>Layer names correspond to the index abbreviations</li>
+</ul>
 <p><strong>Example Access:</strong></p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="co"># View all calculated indices</span></span>
 <span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">names</span>(result<span class="sc">$</span>vegetation_indices)</span>
@@ -475,11 +487,15 @@ GNDVI):</strong></p>
 <span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a><span class="co"># $healthy: c(0.6, 1.0)         # NDVI 0.6-1.0 = healthy</span></span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co"># $moderate_stress: c(0.4, 0.6) # NDVI 0.4-0.6 = moderate stress</span></span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a><span class="co"># $severe_stress: c(0.0, 0.4)   # NDVI 0.0-0.4 = severe stress</span></span></code></pre></div>
-<p><strong>Interpretation:</strong> - <strong>Healthy</strong>:
-Vegetation is growing normally, adequate water/nutrients -
-<strong>Moderate Stress</strong>: Some stress present, may indicate
-water deficit or nutrient issues - <strong>Severe Stress</strong>:
-Significant stress, requires immediate attention</p>
+<p><strong>Interpretation:</strong></p>
+<ul>
+<li><strong>Healthy</strong>: Vegetation is growing normally, adequate
+water/nutrients</li>
+<li><strong>Moderate Stress</strong>: Some stress present, may indicate
+water deficit or nutrient issues</li>
+<li><strong>Severe Stress</strong>: Significant stress, requires
+immediate attention</li>
+</ul>
 <p><strong>Example Usage:</strong></p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Access stress results for NDVI</span></span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>ndvi_stress <span class="ot">&lt;-</span> result<span class="sc">$</span>analysis_results<span class="sc">$</span>stress_analysis<span class="sc">$</span>NDVI</span>
@@ -616,15 +632,27 @@ growth statistics</p>
 </tbody>
 </table>
 <p><strong>Growth Stage Classifications:</strong></p>
-<p><strong>For Corn:</strong> - “emergence”: NDVI &lt; 0.3 -
-“vegetative”: NDVI 0.3-0.6 - “reproductive”: NDVI 0.6-0.8 - “maturity”:
-NDVI &gt; 0.8</p>
-<p><strong>For Soybeans:</strong> - “emergence”: NDVI &lt; 0.4 -
-“vegetative”: NDVI 0.4-0.65 - “reproductive”: NDVI 0.65-0.8 -
-“maturity”: NDVI &gt; 0.8</p>
-<p><strong>For Wheat:</strong> - “tillering”: NDVI &lt; 0.35 -
-“stem_elongation”: NDVI 0.35-0.7 - “grain_filling”: NDVI 0.7-0.8 -
-“maturity”: NDVI &gt; 0.8</p>
+<p><strong>For Corn:</strong></p>
+<ul>
+<li>“emergence”: NDVI &lt; 0.3</li>
+<li>“vegetative”: NDVI 0.3-0.6</li>
+<li>“reproductive”: NDVI 0.6-0.8</li>
+<li>“maturity”: NDVI &gt; 0.8</li>
+</ul>
+<p><strong>For Soybeans:</strong></p>
+<ul>
+<li>“emergence”: NDVI &lt; 0.4</li>
+<li>“vegetative”: NDVI 0.4-0.65</li>
+<li>“reproductive”: NDVI 0.65-0.8</li>
+<li>“maturity”: NDVI &gt; 0.8</li>
+</ul>
+<p><strong>For Wheat:</strong></p>
+<ul>
+<li>“tillering”: NDVI &lt; 0.35</li>
+<li>“stem_elongation”: NDVI 0.35-0.7</li>
+<li>“grain_filling”: NDVI 0.7-0.8</li>
+<li>“maturity”: NDVI &gt; 0.8</li>
+</ul>
 <p><strong>Example Usage:</strong></p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># What growth stage is the crop in?</span></span>
 <span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>growth <span class="ot">&lt;-</span> result<span class="sc">$</span>analysis_results<span class="sc">$</span>growth_analysis</span>
@@ -712,30 +740,53 @@ vegetation indices</p>
 <span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co"># $mean_normalized: 0.75    # Normalized contribution (0-1)</span></span>
 <span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co"># $raw_mean: 0.68           # Raw mean NDVI value</span></span>
 <span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co"># $raw_std: 0.12            # Raw standard deviation</span></span></code></pre></div>
-<p><strong>Composite Yield Index Calculation:</strong> 1. Each index
-(NDVI, EVI, GNDVI, DVI, RVI) is normalized to 0-1 scale 2. Normalized
-values are averaged across all available indices 3. Result is a single
-0-1 score where: - 0.0 = Very low yield potential - 0.5 = Medium yield
-potential<br />
-- 1.0 = Maximum yield potential</p>
+<p><strong>Composite Yield Index Calculation:</strong></p>
+<ol style="list-style-type: decimal">
+<li>Each index (NDVI, EVI, GNDVI, DVI, RVI) is normalized to 0-1
+scale</li>
+<li>Normalized values are averaged across all available indices</li>
+<li>Result is a single 0-1 score where:
+<ul>
+<li>0.0 = Very low yield potential</li>
+<li>0.5 = Medium yield potential<br />
+</li>
+<li>1.0 = Maximum yield potential</li>
+</ul></li>
+</ol>
 <p><strong>Yield Potential Classifications:</strong></p>
-<p><strong>For Corn:</strong> - “Low”: composite_index &lt; 0.3 -
-“Medium”: composite_index 0.3-0.6 - “High”: composite_index 0.6-0.8 -
-“Very High”: composite_index &gt; 0.8</p>
-<p><strong>For Soybeans:</strong> - “Low”: composite_index &lt; 0.35 -
-“Medium”: composite_index 0.35-0.65 - “High”: composite_index 0.65-0.85
-- “Very High”: composite_index &gt; 0.85</p>
-<p><strong>For Wheat:</strong> - “Low”: composite_index &lt; 0.3 -
-“Medium”: composite_index 0.3-0.6 - “High”: composite_index 0.6-0.8 -
-“Very High”: composite_index &gt; 0.8</p>
-<p><strong>Interpretation:</strong> - <strong>Composite Yield Index
-(0.0-1.0):</strong> Higher values indicate better yield potential -
-<strong>Yield Potential Class:</strong> Categorical assessment for
-easier interpretation - <strong>Index Contributions:</strong> Shows
-which indices contributed and their individual scores -
-<strong>Classification Confidence:</strong> Higher when composite_index
-is far from class boundaries (e.g., 0.2 or 0.9 are more confident than
-0.5)</p>
+<p><strong>For Corn:</strong></p>
+<ul>
+<li>“Low”: composite_index &lt; 0.3</li>
+<li>“Medium”: composite_index 0.3-0.6</li>
+<li>“High”: composite_index 0.6-0.8</li>
+<li>“Very High”: composite_index &gt; 0.8</li>
+</ul>
+<p><strong>For Soybeans:</strong></p>
+<ul>
+<li>“Low”: composite_index &lt; 0.35</li>
+<li>“Medium”: composite_index 0.35-0.65</li>
+<li>“High”: composite_index 0.65-0.85</li>
+<li>“Very High”: composite_index &gt; 0.85</li>
+</ul>
+<p><strong>For Wheat:</strong></p>
+<ul>
+<li>“Low”: composite_index &lt; 0.3</li>
+<li>“Medium”: composite_index 0.3-0.6</li>
+<li>“High”: composite_index 0.6-0.8</li>
+<li>“Very High”: composite_index &gt; 0.8</li>
+</ul>
+<p><strong>Interpretation:</strong></p>
+<ul>
+<li><strong>Composite Yield Index (0.0-1.0):</strong> Higher values
+indicate better yield potential</li>
+<li><strong>Yield Potential Class:</strong> Categorical assessment for
+easier interpretation</li>
+<li><strong>Index Contributions:</strong> Shows which indices
+contributed and their individual scores</li>
+<li><strong>Classification Confidence:</strong> Higher when
+composite_index is far from class boundaries (e.g., 0.2 or 0.9 are more
+confident than 0.5)</li>
+</ul>
 <p><strong>Example Usage:</strong></p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co"># What&#39;s the yield potential?</span></span>
 <span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>yield <span class="ot">&lt;-</span> result<span class="sc">$</span>analysis_results<span class="sc">$</span>yield_analysis</span>
@@ -751,7 +802,7 @@ is far from class boundaries (e.g., 0.2 or 0.9 are more confident than
 <span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a><span class="co"># Get individual index contributions</span></span>
 <span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a><span class="cf">for</span> (idx <span class="cf">in</span> <span class="fu">names</span>(yield<span class="sc">$</span>index_contributions)) {</span>
 <span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>  contrib <span class="ot">&lt;-</span> yield<span class="sc">$</span>index_contributions[[idx]]</span>
-<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;%s: %.3f (raw: %.3f ± %.3f)</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;%s: %.3f (raw: %.3f +/- %.3f)</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
 <span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>              idx, </span>
 <span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>              contrib<span class="sc">$</span>mean_normalized,</span>
 <span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>              contrib<span class="sc">$</span>raw_mean,</span>
@@ -833,7 +884,7 @@ calculated indices</p>
 <tr class="even">
 <td><code>histogram</code></td>
 <td>list (optional)</td>
-<td>Histogram data if ≥100 pixels</td>
+<td>Histogram data if &gt;= 100 pixels</td>
 </tr>
 </tbody>
 </table>
@@ -849,7 +900,7 @@ calculated indices</p>
 <span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a></span>
 <span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="co"># NDVI statistics</span></span>
 <span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>ndvi_stats <span class="ot">&lt;-</span> stats<span class="sc">$</span>NDVI</span>
-<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;NDVI: %.3f ± %.3f (range: %.3f to %.3f)</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;NDVI: %.3f +/- %.3f (range: %.3f to %.3f)</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
 <span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>            ndvi_stats<span class="sc">$</span>mean,</span>
 <span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>            ndvi_stats<span class="sc">$</span>std_dev,</span>
 <span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>            ndvi_stats<span class="sc">$</span>min,</span>
@@ -1076,28 +1127,251 @@ processing information</p>
 <hr />
 </div>
 </div>
+<div id="classification-methodology-and-references" class="section level2">
+<h2>Classification Methodology and References</h2>
+<p><code>analyze_crop_vegetation()</code> classifications are based on
+NDVI and other indices. Each analysis component uses a different
+combination of indices, with thresholds grounded in peer-reviewed remote
+sensing literature.</p>
+<div id="stress-detection" class="section level3">
+<h3>Stress Detection</h3>
+<p>Thresholds are applied independently to each available index, with
+each index using biophysically appropriate breakpoints (Tucker, 1979;
+Hatfield et al., 2008):</p>
+<table>
+<thead>
+<tr class="header">
+<th>Index</th>
+<th>Healthy</th>
+<th>Moderate Stress</th>
+<th>Severe Stress</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>NDVI</td>
+<td>&gt;= 0.60</td>
+<td>0.40 – 0.60</td>
+<td>&lt; 0.40</td>
+</tr>
+<tr class="even">
+<td>EVI</td>
+<td>&gt;= 0.40</td>
+<td>0.20 – 0.40</td>
+<td>&lt; 0.20</td>
+</tr>
+<tr class="odd">
+<td>GNDVI</td>
+<td>&gt;= 0.50</td>
+<td>0.30 – 0.50</td>
+<td>&lt; 0.30</td>
+</tr>
+<tr class="even">
+<td>SIPI</td>
+<td>&gt;= 1.00</td>
+<td>0.80 – 1.00</td>
+<td>&lt; 0.80</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div id="growth-stage-classification" class="section level3">
+<h3>Growth Stage Classification</h3>
+<p>Growth stage is predicted from mean NDVI using crop-specific
+thresholds. Statistics (mean, range, percentiles, CV) are additionally
+reported for EVI, GNDVI, and DVI. The threshold approach is conceptually
+consistent with Anyamba et al. (2021), who applied explicit per-crop
+NDVI cutoffs for large-scale MODIS-based crop monitoring, and with the
+MODIS + CDL crop monitoring framework of Akanbi et al. (2024).</p>
+<p><strong>Corn</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Stage</th>
+<th>Mean NDVI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Emergence</td>
+<td>&lt; 0.30</td>
+</tr>
+<tr class="even">
+<td>Vegetative</td>
+<td>0.30 – 0.60</td>
+</tr>
+<tr class="odd">
+<td>Reproductive</td>
+<td>0.60 – 0.80</td>
+</tr>
+<tr class="even">
+<td>Maturity</td>
+<td>&gt; 0.80</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Soybean</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Stage</th>
+<th>Mean NDVI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Emergence</td>
+<td>&lt; 0.40</td>
+</tr>
+<tr class="even">
+<td>Vegetative</td>
+<td>0.40 – 0.65</td>
+</tr>
+<tr class="odd">
+<td>Reproductive</td>
+<td>0.65 – 0.80</td>
+</tr>
+<tr class="even">
+<td>Maturity</td>
+<td>&gt; 0.80</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Wheat</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Stage</th>
+<th>Mean NDVI</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Tillering</td>
+<td>&lt; 0.35</td>
+</tr>
+<tr class="even">
+<td>Stem elongation</td>
+<td>0.35 – 0.70</td>
+</tr>
+<tr class="odd">
+<td>Grain filling</td>
+<td>0.70 – 0.80</td>
+</tr>
+<tr class="even">
+<td>Maturity</td>
+<td>&gt; 0.80</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>These are literature-informed starting points. Exact NDVI boundaries
+vary by cultivar, sensor, region, and season. Calibration with local
+ground truth data is recommended.</p>
+</blockquote>
+</div>
+<div id="yield-potential-composite-index" class="section level3">
+<h3>Yield Potential (Composite Index)</h3>
+<p>Yield potential is assessed using a <strong>composite score</strong>
+that normalizes up to five indices (NDVI, EVI, GNDVI, DVI, RVI) to a 0–1
+scale and averages them, reducing dependence on any single index. This
+multi-index approach is consistent with Bolton &amp; Friedl (2013) and
+Mkhabela et al. (2011).</p>
+<table>
+<thead>
+<tr class="header">
+<th>Composite Score</th>
+<th>Corn / Wheat</th>
+<th>Soybean</th>
+<th>Class</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>&lt; 0.30</td>
+<td>Low</td>
+<td>&lt; 0.35</td>
+<td>Low</td>
+</tr>
+<tr class="even">
+<td>0.30 – 0.60</td>
+<td>Medium</td>
+<td>0.35 – 0.65</td>
+<td>Medium</td>
+</tr>
+<tr class="odd">
+<td>0.60 – 0.80</td>
+<td>High</td>
+<td>0.65 – 0.85</td>
+<td>High</td>
+</tr>
+<tr class="even">
+<td>&gt; 0.80</td>
+<td>Very High</td>
+<td>&gt; 0.85</td>
+<td>Very High</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>The composite yield index is a vegetation-based proxy, not a direct
+yield prediction. Correlation with actual harvested yield varies by
+crop, region, year, and management practice.</p>
+</blockquote>
+</div>
+<div id="references" class="section level3">
+<h3>References</h3>
+<ul>
+<li><p>Tucker, C.J. (1979). Red and photographic infrared linear
+combinations for monitoring vegetation. <em>Remote Sensing of
+Environment</em>, 8(2), 127–150. <a href="https://doi.org/10.1016/0034-4257(79)90013-0" class="uri">https://doi.org/10.1016/0034-4257(79)90013-0</a></p></li>
+<li><p>Hatfield, J.L., Gitelson, A.A., Schepers, J.S. &amp; Walthall,
+C.L. (2008). Application of spectral remote sensing for agronomic
+decisions. <em>Agronomy Journal</em>, 100(S3), S-117–S-131. <a href="https://doi.org/10.2134/agronj2006.0370c" class="uri">https://doi.org/10.2134/agronj2006.0370c</a></p></li>
+<li><p>Anyamba, A. et al. (2021). USA crop yield estimation with MODIS
+NDVI: Impact of the 2012 drought on corn production. <em>Remote
+Sensing</em>, 13(21), 4227. <a href="https://doi.org/10.3390/rs13214227" class="uri">https://doi.org/10.3390/rs13214227</a></p></li>
+<li><p>Akanbi, O.D. et al. (2024). Integrating multiscale geospatial
+analysis for monitoring crop growth, nutrient distribution, and
+hydrological dynamics in large-scale agricultural systems. <em>Journal
+of Geovisualization and Spatial Analysis</em>, 8, 9. <a href="https://doi.org/10.1007/s41651-023-00164-y" class="uri">https://doi.org/10.1007/s41651-023-00164-y</a></p></li>
+<li><p>Bolton, D.K. &amp; Friedl, M.A. (2013). Forecasting crop yield
+using remotely sensed vegetation indices and crop phenology metrics.
+<em>Agricultural and Forest Meteorology</em>, 173, 74–84. <a href="https://doi.org/10.1016/j.agrformet.2013.01.007" class="uri">https://doi.org/10.1016/j.agrformet.2013.01.007</a></p></li>
+<li><p>Mkhabela, M.S. et al. (2011). Crop yield forecasting on the
+Canadian Prairies using MODIS NDVI data. <em>Agricultural and Forest
+Meteorology</em>, 151(3), 385–393. <a href="https://doi.org/10.1016/j.agrformet.2010.11.012" class="uri">https://doi.org/10.1016/j.agrformet.2010.11.012</a></p></li>
+</ul>
+<hr />
+</div>
+</div>
 <div id="validation-notes" class="section level2">
 <h2>Validation Notes</h2>
-<p><strong>Important Caveats:</strong> 1.
-<strong>Threshold-based</strong>: Stress and yield classifications use
-literature-based thresholds that may need adjustment for your specific
-region/conditions 2. <strong>Composite Yield Index</strong>: This is a
+<p><strong>Important Caveats:</strong></p>
+<ol style="list-style-type: decimal">
+<li><p><strong>Threshold-based</strong>: Stress and yield
+classifications use literature-based thresholds that may need adjustment
+for your specific region/conditions</p></li>
+<li><p><strong>Composite Yield Index</strong>: This is a
 vegetation-based proxy, not a direct yield prediction. Correlation with
-actual yield varies by crop, region, and year 3. <strong>Growth
-Stage</strong>: Predictions are based on NDVI patterns and may not align
-perfectly with field observations 4. <strong>No guarantee</strong>:
-These are analytical tools to support decision-making, not definitive
-assessments</p>
-<p><strong>Recommended Validation:</strong> - Compare with ground truth
-data (yield monitors, field scouting) - Calibrate thresholds for your
-specific conditions - Use multiple years of data to establish local
-patterns - Combine with other data sources (weather, soil,
-management)</p>
+actual yield varies by crop, region, and year</p></li>
+<li><p><strong>Growth Stage</strong>: Predictions are based on NDVI
+patterns and may not align perfectly with field observations</p></li>
+<li><p>These are analytical tools to support decision-making, not
+definitive assessments</p></li>
+</ol>
+<p><strong>Recommended Validation:</strong></p>
+<ul>
+<li>Compare with ground truth data (yield monitors, field scouting)</li>
+<li>Calibrate thresholds for your specific conditions</li>
+<li>Use multiple years of data to establish local patterns</li>
+<li>Combine with other data sources (weather, soil, management)</li>
+</ul>
 <hr />
 </div>
 <div id="acknowledgments" class="section level2">
 <h2>Acknowledgments</h2>
-<p>This work was developed by the GeoSpatialSuite team with
+<p>This work was developed by the geospatialsuite team with
 contributions from: Olatunde D. Akanbi, Vibha Mandayam, Yinghui Wu,
 Jeffrey Yarus, Erika I. Barcelos, and Roger H. French.</p>
 </div>

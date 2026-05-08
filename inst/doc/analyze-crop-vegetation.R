@@ -5,12 +5,21 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
   fig.width = 10,
-  fig.height = 8
+  fig.height = 8,
+  eval = TRUE  
 )
 
 ## ----eval=FALSE---------------------------------------------------------------
+# red <- load_sample_data("sample_red.rds")
+# nir <- load_sample_data("sample_nir.rds")
+# blue <- load_sample_data("sample_blue.rds")
+# 
+# spectral_stack <- c(red, nir, blue)
+# 
+# names(spectral_stack) <- c("red", "nir", "blue")
+# 
 # result <- analyze_crop_vegetation(
-#   spectral_data = your_data,
+#   spectral_data = spectral_stack,
 #   crop_type = "corn",
 #   analysis_type = "comprehensive"
 # )
@@ -95,7 +104,7 @@ knitr::opts_chunk$set(
 # # Get individual index contributions
 # for (idx in names(yield$index_contributions)) {
 #   contrib <- yield$index_contributions[[idx]]
-#   cat(sprintf("%s: %.3f (raw: %.3f ± %.3f)\n",
+#   cat(sprintf("%s: %.3f (raw: %.3f +/- %.3f)\n",
 #               idx,
 #               contrib$mean_normalized,
 #               contrib$raw_mean,
@@ -118,7 +127,7 @@ knitr::opts_chunk$set(
 # 
 # # NDVI statistics
 # ndvi_stats <- stats$NDVI
-# cat(sprintf("NDVI: %.3f ± %.3f (range: %.3f to %.3f)\n",
+# cat(sprintf("NDVI: %.3f +/- %.3f (range: %.3f to %.3f)\n",
 #             ndvi_stats$mean,
 #             ndvi_stats$std_dev,
 #             ndvi_stats$min,
